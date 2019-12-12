@@ -27,6 +27,7 @@ typedef struct _capture_stream_t
 typedef struct _capture_dev_t
 {
     int              v4l_fd;
+    char             dev_name[64];
     unsigned int     dev_type;
     capture_stream_t stream;
 } capture_dev_t;

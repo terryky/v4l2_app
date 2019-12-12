@@ -19,6 +19,7 @@ get_capture_device_type (int v4l_fd)
 {
     int ret;
     unsigned int caps_flag;
+    unsigned int dev_type = 0;
     struct v4l2_capability caps = {0};
 
     ret = ioctl (v4l_fd, VIDIOC_QUERYCAP, &caps);
@@ -30,13 +31,23 @@ get_capture_device_type (int v4l_fd)
     else
         caps_flag = caps.capabilities;
 
-    if (caps_flag & V4L2_CAP_VIDEO_CAPTURE_MPLANE)
-        return V4L2_CAP_VIDEO_CAPTURE_MPLANE;
-
     if (caps_flag & V4L2_CAP_VIDEO_CAPTURE)
-        return V4L2_CAP_VIDEO_CAPTURE;
+        dev_type =  V4L2_CAP_VIDEO_CAPTURE;
 
-    return 0;
+    if (caps_flag & V4L2_CAP_VIDEO_CAPTURE_MPLANE)
+        dev_type =  V4L2_CAP_VIDEO_CAPTURE_MPLANE;
+
+    /* confirm valid format is available */
+    if (dev_type)
+    {
+        struct v4l2_fmtdesc fmtdesc = {0};
+        fmtdesc.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+        ret = ioctl (v4l_fd, VIDIOC_ENUM_FMT, &fmtdesc);
+        if (ret < 0)
+            dev_type = 0;
+    }
+
+    return dev_type;
 }
 
 static unsigned int
@@ -233,6 +244,7 @@ v4l2_open_capture_device (int devid)
     cap_dev = (capture_dev_t *)malloc (sizeof (capture_dev_t));
     DBG_ASSERT (cap_dev, "alloc error.\n");
 
+    snprintf (cap_dev->dev_name, sizeof (cap_dev->dev_name), devname);
     cap_dev->v4l_fd   = v4l_fd;
     cap_dev->dev_type = dev_type;
 
@@ -390,6 +402,7 @@ v4l2_show_current_capture_settings (capture_dev_t *cap_dev)
     unsigned int capture_memtype = cap_stream->memtype;
 
     fprintf (stderr, "-------------------------------\n");
+    fprintf (stderr, " capture_devie  : %s\n", cap_dev->dev_name);
     fprintf (stderr, " capture_devtype: ");
     if (dev_type == V4L2_CAP_VIDEO_CAPTURE_MPLANE)
         fprintf (stderr, "V4L2_CAP_VIDEO_CAPTURE_MPLANE\n");
