@@ -1,6 +1,8 @@
 #ifndef _UTIL_DEBUG_H_
 #define _UTIL_DEBUG_H_
 
+#include <stdio.h>
+#include <stdlib.h> /* for exit() */
 
 #define DBG_ASSERT(cond, ...) do {                                  \
     if (!(cond)) {                                                  \
